@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     tools {
-        // Ensure these names match what you have in 'Global Tool Configuration'
         maven 'Maven'
         jdk 'Java'
     }
@@ -10,7 +9,6 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                // This pulls the code from the Git URL you configured
                 git branch: 'main', url: 'https://github.com/AryaSandilya/demoUser.git'
             }
         }
@@ -29,28 +27,30 @@ pipeline {
             }
         }
 
-        stage('Archive Artifacts') {
+        stage('Docker Build & Deploy') {
             steps {
-                // Archives the JAR file so you can download it from the Jenkins UI
-                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                script {
+                    // 1. Kill the old non-docker process if it's still running on 8081
+                    sh 'sudo fuser -k 8081/tcp || true'
+
+                    echo 'Building Docker Image...'
+                    sh 'docker build -t demouser-app:latest .'
+
+                    echo 'Running Docker Container...'
+                    // 2. Stop and remove the old container if it exists
+                    sh 'docker stop demouser-container || true'
+                    sh 'docker rm demouser-container || true'
+
+                    // 3. Run the new container
+                    sh 'docker run -d --name demouser-container -p 8081:8081 demouser-app:latest'
+                }
             }
         }
-        stage('Deploy') {
-    steps {
-        sh '''
-            # Kill any old process on 8081 to avoid "Address already in use"
-            sudo fuser -k 8081/tcp || true
-
-            # Start the new version and tell Jenkins NOT to kill it
-            export JENKINS_NODE_COOKIE=dontKillMe
-            nohup java -jar target/*.jar --server.port=8081 > app_log.txt 2>&1 &
-        '''
     }
- }
-}
+
     post {
         success {
-            echo 'Build and Test completed successfully!'
+            echo 'Docker Deployment successful! App is at http://44.201.115.126:8081'
         }
         failure {
             echo 'Build failed. Check the console output for details.'

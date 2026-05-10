@@ -30,24 +30,25 @@ pipeline {
         stage('Docker Build & Deploy') {
             steps {
                 script {
-                    // 1. Kill the old non-docker process if it's still running on 8081
+                    echo 'Cleaning up port 8081...'
+                    // Kill any manual java processes on 8081
                     sh 'sudo fuser -k 8081/tcp || true'
 
                     echo 'Building Docker Image...'
                     sh 'docker build -t demouser-app:latest .'
 
-                    echo 'Running Docker Container...'
-                    // 2. Stop and remove the old container if it exists
+                    echo 'Cleaning up old containers...'
+                    // Stop and remove the old container
                     sh 'docker stop demouser-container || true'
                     sh 'docker rm demouser-container || true'
 
-                    // 3. Run the new container
+                    echo 'Starting New Docker Container...'
+                    // Run the new container
                     sh 'docker run -d --name demouser-container -p 8081:8081 demouser-app:latest'
                 }
             }
         }
-    }
-
+}
     post {
         success {
             echo 'Docker Deployment successful! App is at http://44.201.115.126:8081'

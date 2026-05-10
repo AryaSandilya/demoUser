@@ -1,5 +1,5 @@
 # Use a lightweight JDK 17 image
-FROM openjdk:21-jdk-slim
+FROM eclipse-temurin:21-jdk-alpine
 
 # Set the working directory inside the container
 WORKDIR /app

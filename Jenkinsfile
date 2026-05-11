@@ -27,24 +27,21 @@ pipeline {
             }
         }
 
-        stage('Docker Build & Deploy') {
+        stage('K8s Build & Deploy') {
             steps {
                 script {
-                    echo 'Cleaning up port 8081...'
-                    // Kill any manual java processes on 8081
-                    sh 'sudo fuser -k 8081/tcp || true'
-
                     echo 'Building Docker Image...'
                     sh 'docker build -t demouser-app:latest .'
 
-                    echo 'Cleaning up old containers...'
-                    // Stop and remove the old container
-                    sh 'docker stop demouser-container || true'
-                    sh 'docker rm demouser-container || true'
+                    echo 'Loading Image into Minikube...'
+                    sh 'minikube image load demouser-app:latest'
 
-                    echo 'Starting New Docker Container...'
-                    // Run the new container
-                    sh 'docker run -d --name demouser-container -p 8081:8081 demouser-app:latest'
+                    echo 'Applying Kubernetes Manifests...'
+                    // This applies your deployment and service
+                    sh 'kubectl apply -f deployment.yaml'
+
+                    echo 'Rolling out update...'
+                    sh 'kubectl rollout restart deployment/demouser-deployment'
                 }
             }
         }

@@ -36,12 +36,14 @@ pipeline {
                     echo 'Loading Image into Minikube...'
                     sh 'minikube image load demouser-app:latest'
 
-                    echo 'Applying Kubernetes Manifests...'
-                    // This applies your deployment and service
+                    echo 'Cleaning up existing K8s deployment...'
+                    sh 'kubectl delete -f deployment.yaml --ignore-not-found'
+
+                    echo 'Applying New Kubernetes Manifests...'
                     sh 'kubectl apply -f deployment.yaml'
 
-                    echo 'Rolling out update...'
-                    sh 'kubectl rollout restart deployment/demouser-deployment'
+                    // Wait for pods to be ready
+                    sh 'kubectl rollout status deployment/demouser-deployment'
                 }
             }
         }
